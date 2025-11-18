@@ -1,5 +1,6 @@
 Flask==3.0.3
 pyTelegramBotAPI==4.29.1
+gunicorn==22.0.0
 requests==2.32.3
 urllib3==2.2.2
 anyio==4.3.0
