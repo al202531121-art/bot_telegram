@@ -190,13 +190,5 @@ def index():
 # ------------------- INICIO -------------------
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
-
-    info = bot.get_webhook_info()
-    if info.url != WEBHOOK_URL:
-        bot.remove_webhook()
-        bot.set_webhook(url=WEBHOOK_URL)
-        print("Webhook configurado:", WEBHOOK_URL)
-    else:
-        print("Webhook ya estaba configurado.")
-
     app.run(host="0.0.0.0", port=port)
+
