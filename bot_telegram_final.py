@@ -60,8 +60,8 @@ def callback_menu(call):
     elif opcion == "5":
         bot.send_message(chat_id, "¡Gracias por usar el bot! ❤️")
 
-# ------------------- MANEJO DE MENSAJES -------------------
-@bot.message_handler(func=lambda m: True)
+# ------------------- NUEVO HANDLER GENERAL MEJORADO -------------------
+@bot.message_handler(func=lambda m: not m.text.startswith("/"))
 def mensajes(message):
     chat_id = message.chat.id
     texto = message.text.lower()
@@ -191,4 +191,3 @@ def index():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
-
