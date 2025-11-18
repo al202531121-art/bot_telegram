@@ -1,12 +1,20 @@
 import telebot
 from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
-from flask import Flask, request
+from flask import Flask
+import threading
 
-# TOKEN del bot
+# ------------------- TOKEN DEL BOT -------------------
 TOKEN = "7522585575:AAGLemnCLfk7tirJPeVO_5UU9W8omVpeySQ"
 bot = telebot.TeleBot(TOKEN)
 
-# Estados y datos del usuario
+# ------------------- SERVIDOR FLASK PARA RENDER -------------------
+app = Flask(__name__)
+
+@app.route("/", methods=["GET"])
+def home():
+    return "Bot funcionando correctamente", 200
+
+# ------------------- ESTADOS Y DATOS -------------------
 estado = {}
 sexo = {}
 edad = {}
@@ -31,7 +39,7 @@ def menu_principal(chat_id):
 def start(message):
     menu_principal(message.chat.id)
 
-# ------------------- CALLBACK DE BOTONES DEL MENÚ -------------------
+# ------------------- CALLBACK DEL MENÚ -------------------
 @bot.callback_query_handler(func=lambda call: call.data.startswith("menu_"))
 def callback_menu(call):
     chat_id = call.message.chat.id
@@ -61,7 +69,7 @@ def mensajes(message):
         menu_principal(chat_id)
         return
 
-    # ------------------- PEDIR SEXO -------------------
+    # ---------- PEDIR SEXO ----------
     if estado[chat_id] == "PEDIR_SEXO":
         if texto not in ["m", "f"]:
             bot.send_message(chat_id, "Por favor escribe M o F.")
@@ -71,7 +79,7 @@ def mensajes(message):
         bot.send_message(chat_id, "Perfecto. Ahora dime tu edad:")
         return
 
-    # ------------------- PEDIR EDAD -------------------
+    # ---------- PEDIR EDAD ----------
     if estado[chat_id] == "PEDIR_EDAD":
         if not texto.isdigit():
             bot.send_message(chat_id, "Escribe solo números, por favor.")
@@ -88,7 +96,7 @@ def mensajes(message):
         bot.send_message(chat_id, "¿Cuál es tu objetivo?", reply_markup=markup)
         return
 
-    # ------------------- PEDIR PESO (IMC) -------------------
+    # ---------- PEDIR PESO IMC ----------
     if estado[chat_id] == "PEDIR_PESO":
         try:
             peso[chat_id] = float(texto.replace(",", "."))
@@ -99,7 +107,7 @@ def mensajes(message):
         bot.send_message(chat_id, "Escribe tu altura en metros (ej. 1.70):")
         return
 
-    # ------------------- PEDIR ALTURA (IMC) -------------------
+    # ---------- PEDIR ALTURA IMC ----------
     if estado[chat_id] == "PEDIR_ALTURA":
         try:
             altura[chat_id] = float(texto.replace(",", "."))
@@ -109,6 +117,7 @@ def mensajes(message):
 
         imc_val = peso[chat_id] / (altura[chat_id] ** 2)
         interpretacion = interpretar_imc(imc_val)
+
         bot.send_message(chat_id, f"Tu IMC es {imc_val:.2f} → {interpretacion}")
 
         markup = InlineKeyboardMarkup()
@@ -124,12 +133,12 @@ def callback_objetivo(call):
     bot.answer_callback_query(call.id)
     data = call.data
 
-    # ------------------- Volver al menú -------------------
+    # Volver
     if data in ["obj_volver", "imc_volver"]:
         menu_principal(chat_id)
         return
 
-    # ------------------- Dieta desde objetivo -------------------
+    # Dietas por objetivo
     if data in ["obj_1", "obj_2", "obj_3"]:
         if data == "obj_1":
             objetivo[chat_id] = "subir peso"
@@ -137,16 +146,17 @@ def callback_objetivo(call):
             objetivo[chat_id] = "ganar masa muscular"
         elif data == "obj_3":
             objetivo[chat_id] = "bajar grasa"
+
         estado[chat_id] = "MOSTRAR_DIETA"
         mostrar_dieta(chat_id)
         return
 
-    # ------------------- Dieta desde IMC -------------------
+    # Dieta desde IMC
     if data == "imc_dieta":
         estado[chat_id] = "PEDIR_SEXO"
         bot.send_message(chat_id, "Para darte una dieta correcta, dime tu sexo:\nM = Hombre\nF = Mujer")
 
-# ------------------- FUNCIONES DE IMC -------------------
+# ------------------- FUNCIONES INICIALES -------------------
 def interpretar_imc(imc):
     if imc < 18.5:
         return "Bajo peso"
@@ -161,68 +171,42 @@ def interpretar_imc(imc):
 def mostrar_dieta(chat_id):
     obj = objetivo[chat_id]
     user_edad = edad.get(chat_id, 25)
-    user_sexo = sexo.get(chat_id, "m")
 
     if obj == "subir peso":
-        if user_edad < 30:
-            texto = "🍽️ *Dieta joven para Subir de Peso*\n- Desayuno: Avena + plátano + crema de cacahuate\n- Comida: Pasta + pollo + aguacate\n- Cena: Tortilla + huevo + queso\n- Snacks: Nueces, yogurt, batido"
-        else:
-            texto = "🍽️ *Dieta adulta para Subir de Peso*\n- Desayuno: Avena + fruta\n- Comida: Pollo + arroz + verduras\n- Cena: Huevos + ensalada\n- Snacks: Yogurt, nueces"
-
+        texto = "🍽️ *Dieta para Subir Peso*\n- Desayuno: Avena + plátano\n- Comida: Pasta + pollo\n- Cena: Huevos + tortilla\n- Snacks: Nueces y yogurt"
     elif obj == "ganar masa muscular":
-        if user_edad < 30:
-            texto = "💪 *Dieta joven para Masa Muscular*\n- Desayuno: Huevos + avena\n- Comida: Carne magra + pasta\n- Cena: Atún + verduras\n- Snacks: Almendras, batido de proteína"
-        else:
-            texto = "💪 *Dieta adulta para Masa Muscular*\n- Desayuno: Huevos + avena\n- Comida: Pollo + arroz + verduras\n- Cena: Pescado + verduras\n- Snacks: Yogurt, frutos secos"
-
-    else:  # bajar grasa
-        if user_edad < 30:
-            texto = "🔥 *Dieta joven para Bajar Grasa*\n- Desayuno: Yogurt + frutas\n- Comida: Pollo + verduras\n- Cena: Ensalada + atún\n- Snacks: Manzana, pepino, té verde"
-        else:
-            texto = "🔥 *Dieta adulta para Bajar Grasa*\n- Desayuno: Yogurt + avena\n- Comida: Pollo + verduras\n- Cena: Ensalada + huevo\n- Snacks: Frutas, té verde"
+        texto = "💪 *Dieta para Masa Muscular*\n- Desayuno: Huevos + avena\n- Comida: Carne o pollo + arroz\n- Cena: Pescado + verduras\n- Snacks: Almendras y proteína"
+    else:
+        texto = "🔥 *Dieta para Bajar Grasa*\n- Desayuno: Yogurt + frutas\n- Comida: Pollo + verduras\n- Cena: Ensalada + atún\n- Snacks: Té verde y fruta"
 
     bot.send_message(chat_id, texto, parse_mode="Markdown")
     menu_principal(chat_id)
 
-# ------------------- MEJORAR SALUD -------------------
-def mejorar_salud(chat_id):
-    texto = "🌿 *Consejos para mejorar tu salud:*\n- Duerme 7-8 horas diarias\n- Mantente hidratado\n- Realiza caminatas o ejercicio ligero\n- Come frutas y verduras\n- Evita exceso de azúcar y grasa"
-    bot.send_message(chat_id, texto, parse_mode="Markdown")
-    menu_principal(chat_id)
-
-# ------------------- EJERCICIOS SUGERIDOS -------------------
+# ------------------- EJERCICIOS -------------------
 def mostrar_ejercicios(chat_id):
     obj = objetivo.get(chat_id, "general")
+
     if obj == "subir peso":
-        texto = "🏋️ *Ejercicios sugeridos para subir de peso:*\n- Sentadillas 3x12\n- Peso muerto 3x10\n- Press de banca 3x10\n- Remo con barra 3x12"
+        texto = "🏋️ Ejercicios: Sentadilla, peso muerto, press banca"
     elif obj == "ganar masa muscular":
-        texto = "💪 *Ejercicios para ganar masa muscular:*\n- Press de banca 3x10\n- Dominadas 3x8\n- Curl de bíceps 3x12\n- Sentadillas 3x12"
+        texto = "💪 Ejercicios: Banca, dominadas, bíceps, sentadilla"
     elif obj == "bajar grasa":
-        texto = "🔥 *Ejercicios para bajar grasa:*\n- Cardio 30 min\n- Burpees 3x15\n- Saltos de tijera 3x20\n- Plancha 3x1 min"
+        texto = "🔥 Ejercicios: Cardio, burpees, plancha, saltos"
     else:
-        texto = "🤸 *Ejercicios generales:* Caminar, estiramientos, yoga, saltar la cuerda"
+        texto = "🤸 Ejercicios generales: Yoga, caminata, estiramientos"
+
     bot.send_message(chat_id, texto, parse_mode="Markdown")
     menu_principal(chat_id)
 
+# ------------------- INICIAR BOT EN HILO -------------------
+def iniciar_bot():
+    print("BOT ENCENDIDO")
+    bot.infinity_polling(skip_pending=True)
 
-# ==========================
-#  WEBHOOK PARA RENDER
-# ==========================
+# ------------------- INICIO RENDER -------------------
+if __name__ == "__main__":
+    hilo = threading.Thread(target=iniciar_bot)
+    hilo.daemon = True
+    hilo.start()
 
-app = Flask(__name__)
-
-@app.route('/', methods=['GET'])
-def home():
-    return "BOT DE TELEGRAM FUNCIONANDO"
-
-@app.route(f'/{TOKEN}', methods=['POST'])
-def webhook():
-    json_str = request.get_data().decode('UTF-8')
-    update = telebot.types.Update.de_json(json_str)
-    bot.process_new_updates([update])
-    return '', 200
-
-bot.remove_webhook()
-bot.set_webhook(url=f"https://bot-telegram-7-mgsu.onrender.com/{TOKEN}")
-
-print("BOT ENCENDIDO")
+    app.run(host="0.0.0.0", port=10000)
