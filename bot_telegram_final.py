@@ -30,7 +30,6 @@ def menu_principal(chat_id):
     bot.send_message(chat_id, "Bienvenido al chat de salud 🩺\nSelecciona una opción:", reply_markup=markup)
     estado[chat_id] = "MENU"
 
-# ------------------- COMANDO START -------------------
 @bot.message_handler(commands=["start"])
 def start(message):
     menu_principal(message.chat.id)
@@ -178,7 +177,8 @@ def mostrar_ejercicios(chat_id):
 # ------------------- WEBHOOK -------------------
 @app.route("/webhook", methods=["POST"])
 def webhook():
-    update = telebot.types.Update.de_json(request.data.decode("utf-8"))
+    json_str = request.stream.read().decode("utf-8")
+    update = telebot.types.Update.de_json(json_str)
     bot.process_new_updates([update])
     return "OK", 200
 
@@ -201,4 +201,5 @@ if __name__ == "__main__":
     print("\nWebhook reiniciado correctamente ->", WEBHOOK_URL, "\n")
 
     app.run(host="0.0.0.0", port=port)
+
 
