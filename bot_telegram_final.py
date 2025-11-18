@@ -1,9 +1,12 @@
 import telebot
 from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
 from flask import Flask, request
+import os
 
 TOKEN = "7522585575:AAGLemnCLfk7tirJPeVO_5UU9W8omVpeySQ"
-bot = telebot.TeleBot(TOKEN)
+WEBHOOK_URL = "https://bot-telegram-7-mgsu.onrender.com"
+
+bot = telebot.TeleBot(TOKEN, threaded=False)
 app = Flask(__name__)
 
 # Estados y datos del usuario
@@ -173,7 +176,7 @@ def mostrar_dieta(chat_id):
             texto = "💪 *Dieta joven para Masa Muscular*\n- Desayuno: Huevos + avena\n- Comida: Carne magra + pasta\n- Cena: Atún + verduras\n- Snacks: Almendras, batido de proteína"
         else:
             texto = "💪 *Dieta adulta para Masa Muscular*\n- Desayuno: Huevos + avena\n- Comida: Pollo + arroz + verduras\n- Cena: Pescado + verduras\n- Snacks: Yogurt, frutos secos"
-    else:  # bajar grasa
+    else:
         if user_edad < 30:
             texto = "🔥 *Dieta joven para Bajar Grasa*\n- Desayuno: Yogurt + frutas\n- Comida: Pollo + verduras\n- Cena: Ensalada + atún\n- Snacks: Manzana, pepino, té verde"
         else:
@@ -202,25 +205,22 @@ def mostrar_ejercicios(chat_id):
     bot.send_message(chat_id, texto, parse_mode="Markdown")
     menu_principal(chat_id)
 
-
-# ------------------- WEBHOOK PARA RENDER -------------------
-@app.route(f"/{TOKEN}", methods=["POST"])
+# ------------------- FLASK + WEBHOOK -------------------
+@app.route(f"/{TOKEN}", methods=['POST'])
 def webhook():
-    json_str = request.get_data().decode("UTF-8")
-    update = telebot.types.Update.de_json(json_str)
+    json_string = request.get_data().decode("utf-8")
+    update = telebot.types.Update.de_json(json_string)
     bot.process_new_updates([update])
     return "OK", 200
 
-
 @app.route("/")
 def home():
-    return "BOT CORRIENDO CORRECTAMENTE", 200
+    return "Bot funcionando correctamente", 200
 
-
+# ------------------- CONFIGURAR WEBHOOK -------------------
 if __name__ == "__main__":
-    import os
-    PORT = int(os.environ.get("PORT", 5000))
     bot.remove_webhook()
-    bot.set_webhook(url=f"https://<TU-URL-RENDER>.onrender.com/{TOKEN}")
-    app.run(host="0.0.0.0", port=PORT)
+    bot.set_webhook(url=f"{WEBHOOK_URL}/{TOKEN}")
 
+    port = int(os.environ.get("PORT", 10000))
+    app.run(host="0.0.0.0", port=port)
