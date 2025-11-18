@@ -61,7 +61,7 @@ def callback_menu(call):
         bot.send_message(chat_id, "¡Gracias por usar el bot! ❤️")
 
 # ------------------- NUEVO HANDLER GENERAL MEJORADO -------------------
-@bot.message_handler(func=lambda m: not m.text.startswith("/"))
+@bot.message_handler(func=lambda m: m.text and not m.text.startswith("/"))
 def mensajes(message):
     chat_id = message.chat.id
     texto = message.text.lower()
@@ -69,7 +69,6 @@ def mensajes(message):
     if chat_id not in estado:
         menu_principal(chat_id)
         return
-
     # ---------- SEXO ----------
     if estado[chat_id] == "PEDIR_SEXO":
         if texto not in ["m", "f"]:
@@ -202,3 +201,4 @@ if __name__ == "__main__":
     print("\nWebhook reiniciado correctamente ->", WEBHOOK_URL, "\n")
 
     app.run(host="0.0.0.0", port=port)
+
