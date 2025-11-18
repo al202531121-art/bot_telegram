@@ -1,13 +1,10 @@
 import telebot
 from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
 from flask import Flask, request
-import os
 
+# TOKEN del bot
 TOKEN = "7522585575:AAGLemnCLfk7tirJPeVO_5UU9W8omVpeySQ"
-WEBHOOK_URL = "https://bot-telegram-7-mgsu.onrender.com"
-
-bot = telebot.TeleBot(TOKEN, threaded=False)
-app = Flask(__name__)
+bot = telebot.TeleBot(TOKEN)
 
 # Estados y datos del usuario
 estado = {}
@@ -109,11 +106,11 @@ def mensajes(message):
         except ValueError:
             bot.send_message(chat_id, "Ingresa un número válido para la altura.")
             return
+
         imc_val = peso[chat_id] / (altura[chat_id] ** 2)
         interpretacion = interpretar_imc(imc_val)
         bot.send_message(chat_id, f"Tu IMC es {imc_val:.2f} → {interpretacion}")
 
-        # Preguntar si quiere ver dieta
         markup = InlineKeyboardMarkup()
         markup.add(InlineKeyboardButton("Sí, mostrar dieta", callback_data="imc_dieta"))
         markup.add(InlineKeyboardButton("No, volver al menú", callback_data="imc_volver"))
@@ -171,12 +168,14 @@ def mostrar_dieta(chat_id):
             texto = "🍽️ *Dieta joven para Subir de Peso*\n- Desayuno: Avena + plátano + crema de cacahuate\n- Comida: Pasta + pollo + aguacate\n- Cena: Tortilla + huevo + queso\n- Snacks: Nueces, yogurt, batido"
         else:
             texto = "🍽️ *Dieta adulta para Subir de Peso*\n- Desayuno: Avena + fruta\n- Comida: Pollo + arroz + verduras\n- Cena: Huevos + ensalada\n- Snacks: Yogurt, nueces"
+
     elif obj == "ganar masa muscular":
         if user_edad < 30:
             texto = "💪 *Dieta joven para Masa Muscular*\n- Desayuno: Huevos + avena\n- Comida: Carne magra + pasta\n- Cena: Atún + verduras\n- Snacks: Almendras, batido de proteína"
         else:
             texto = "💪 *Dieta adulta para Masa Muscular*\n- Desayuno: Huevos + avena\n- Comida: Pollo + arroz + verduras\n- Cena: Pescado + verduras\n- Snacks: Yogurt, frutos secos"
-    else:
+
+    else:  # bajar grasa
         if user_edad < 30:
             texto = "🔥 *Dieta joven para Bajar Grasa*\n- Desayuno: Yogurt + frutas\n- Comida: Pollo + verduras\n- Cena: Ensalada + atún\n- Snacks: Manzana, pepino, té verde"
         else:
@@ -205,22 +204,25 @@ def mostrar_ejercicios(chat_id):
     bot.send_message(chat_id, texto, parse_mode="Markdown")
     menu_principal(chat_id)
 
-# ------------------- FLASK + WEBHOOK -------------------
-@app.route(f"/{TOKEN}", methods=['POST'])
-def webhook():
-    json_string = request.get_data().decode("utf-8")
-    update = telebot.types.Update.de_json(json_string)
-    bot.process_new_updates([update])
-    return "OK", 200
 
-@app.route("/")
+# ==========================
+#  WEBHOOK PARA RENDER
+# ==========================
+
+app = Flask(__name__)
+
+@app.route('/', methods=['GET'])
 def home():
-    return "Bot funcionando correctamente", 200
+    return "BOT DE TELEGRAM FUNCIONANDO"
 
-# ------------------- CONFIGURAR WEBHOOK -------------------
-if __name__ == "__main__":
-    bot.remove_webhook()
-    bot.set_webhook(url=f"{WEBHOOK_URL}/{TOKEN}")
+@app.route(f'/{TOKEN}', methods=['POST'])
+def webhook():
+    json_str = request.get_data().decode('UTF-8')
+    update = telebot.types.Update.de_json(json_str)
+    bot.process_new_updates([update])
+    return '', 200
 
-    port = int(os.environ.get("PORT", 10000))
-    app.run(host="0.0.0.0", port=port)
+bot.remove_webhook()
+bot.set_webhook(url=f"https://bot-telegram-7-mgsu.onrender.com/{TOKEN}")
+
+print("BOT ENCENDIDO")
