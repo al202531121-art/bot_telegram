@@ -5,7 +5,7 @@ import os
 
 # ------------------- TOKEN -------------------
 TOKEN = "7522585575:AAGLemnCLfk7tirJPeVO_5UU9W8omVpeySQ"
-WEBHOOK_URL = "https://bot-telegram-12.onrender.com/webhook"
+WEBHOOK_URL = "https://bot-telegram-13.onrender.com/webhook"
 
 bot = telebot.TeleBot(TOKEN)
 app = Flask(__name__)
@@ -200,4 +200,5 @@ if __name__ == "__main__":
         print("Webhook ya estaba configurado.")
 
     app.run(host="0.0.0.0", port=port)
+
 
