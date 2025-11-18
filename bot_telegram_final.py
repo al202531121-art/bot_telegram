@@ -188,6 +188,17 @@ def index():
     return "Bot salud activo con Webhook!"
 
 # ------------------- INICIO -------------------
+# ------------------- INICIO -------------------
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
+
+    # Forzar el webhook SIEMPRE al iniciar render
+    try:
+        bot.remove_webhook()
+    except:
+        pass
+
+    bot.set_webhook(url=WEBHOOK_URL)
+    print("\nWebhook reiniciado correctamente ->", WEBHOOK_URL, "\n")
+
     app.run(host="0.0.0.0", port=port)
