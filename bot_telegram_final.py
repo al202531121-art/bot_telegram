@@ -1,9 +1,10 @@
 import telebot
 from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
+from flask import Flask, request
 
-# TOKEN del bot
 TOKEN = "7522585575:AAGLemnCLfk7tirJPeVO_5UU9W8omVpeySQ"
 bot = telebot.TeleBot(TOKEN)
+app = Flask(__name__)
 
 # Estados y datos del usuario
 estado = {}
@@ -201,5 +202,25 @@ def mostrar_ejercicios(chat_id):
     bot.send_message(chat_id, texto, parse_mode="Markdown")
     menu_principal(chat_id)
 
-print("BOT ENCENDIDO…")
-bot.infinity_polling()
+
+# ------------------- WEBHOOK PARA RENDER -------------------
+@app.route(f"/{TOKEN}", methods=["POST"])
+def webhook():
+    json_str = request.get_data().decode("UTF-8")
+    update = telebot.types.Update.de_json(json_str)
+    bot.process_new_updates([update])
+    return "OK", 200
+
+
+@app.route("/")
+def home():
+    return "BOT CORRIENDO CORRECTAMENTE", 200
+
+
+if __name__ == "__main__":
+    import os
+    PORT = int(os.environ.get("PORT", 5000))
+    bot.remove_webhook()
+    bot.set_webhook(url=f"https://<TU-URL-RENDER>.onrender.com/{TOKEN}")
+    app.run(host="0.0.0.0", port=PORT)
+
